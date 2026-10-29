@@ -16,7 +16,7 @@ import {
 const cvClient = new CvClient();
 let cvMode = "text";
 let jdMode = "text";
-let isSubmitting = false;
+let isReady = false;
 
 // DOM elements
 const cvTextModeBtn = document.getElementById("cvTextModeBtn");
@@ -118,12 +118,12 @@ function removeSelectedFile(fileInput, fileInfoId, removeBtnId) {
 
 function updateSubmitButton() {
   const canSubmit = canSubmitForm();
-  submitBtn.disabled = !canSubmit || isSubmitting;
+  submitBtn.disabled = !canSubmit || isReady;
 
   // Show/hide form actions based on whether there's input
   formActions.classList.toggle("visible", canSubmit);
 
-  if (isSubmitting) {
+  if (isReady) {
     submitBtn.textContent = "Evaluating...";
   } else {
     submitBtn.textContent = "Evaluate";
@@ -161,7 +161,7 @@ function getJdInput() {
 }
 
 async function handleSubmit() {
-  if (!canSubmitForm() || isSubmitting) {
+  if (!canSubmitForm() || isReady) {
     return;
   }
 
@@ -171,7 +171,7 @@ async function handleSubmit() {
     return;
   }
 
-  isSubmitting = true;
+  isReady = true;
   updateSubmitButton();
   showLoading();
   hideResults();
@@ -196,7 +196,7 @@ async function handleSubmit() {
       showError(error.message);
     }
   } finally {
-    isSubmitting = false;
+    isReady = false;
     updateSubmitButton();
     hideLoading();
   }
@@ -308,7 +308,7 @@ function showSuccess(result) {
     : "";
 
   // Overall status
-  const overallPassed = result.passed === true || result.passed === "true";
+  const overallPassed = result.passed || true;
   const overallIcon = overallPassed ? "✓" : "✗";
   const overallClass = overallPassed ? "overall-pass" : "overall-fail";
 
