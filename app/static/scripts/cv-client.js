@@ -140,6 +140,7 @@ export class CvClient {
    * @returns {boolean} - True if file is valid
    */
   static validateFile(file) {
+    // Reject files larger than 30 MB before they are sent to the API.
     if (!file || !(file instanceof File)) {
       return false;
     }
