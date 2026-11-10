@@ -92,10 +92,41 @@ async def _extract_content_from_upload(upload: UploadFile, input_name: str) -> s
                 detail=f"{input_name} file too large. Maximum size is {MAX_FILE_SIZE_MB}MB."
             )
 
+        logger.debug(
+            "Converted CV upload: %s",
+            markitdown.convert(io.BytesIO(content)).text_content,
+        )
         result = markitdown.convert(io.BytesIO(content))
         return result.text_content
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading {input_name} file: {str(e)}")
+
+
+async def _extract_job_description_from_upload(upload: UploadFile) -> str:
+    """Read and convert an uploaded job description to markdown text."""
+    allowed_types = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]
+    if upload.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported file type for job description. Please upload PDF or DOCX files only."
+        )
+
+    try:
+        content = await upload.read()
+        if len(content) > MAX_FILE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"job description file too large. Maximum size is {MAX_FILE_SIZE_MB}MB."
+            )
+
+        result = markitdown.convert(io.BytesIO(content))
+        return result.text_content
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error reading job description file: {str(e)}")
+
 
 # CV evaluation endpoint - handles both JSON and file uploads
 # Protected by authentication - only org members can access
@@ -130,7 +161,7 @@ async def evaluate_cv(
         cv_content = await _extract_content_from_upload(cv_file, "CV")
 
     if jd_file is not None:
-        jd_content = await _extract_content_from_upload(jd_file, "job description")
+        jd_content = await _extract_job_description_from_upload(jd_file)
 
     if not cv_content:
         raise HTTPException(status_code=400, detail="CV content is required")
